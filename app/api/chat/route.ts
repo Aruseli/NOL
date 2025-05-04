@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+// Убедитесь, что путь импорта верный
 import { getChartDataFromLLM } from '@/lib/langchain-agent';
 
 export async function POST(request: Request) {
@@ -9,25 +10,28 @@ export async function POST(request: Request) {
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
+
+    // Вызываем функцию, которая может вернуть объект или строку
     const llmResponse = await getChartDataFromLLM(prompt);
 
     let responseText: string;
 
-    // Проверяем тип ответа
-    if (typeof llmResponse === 'string') {
-      // Если строка, используем ее как текст для чата
-      responseText = llmResponse;
-    } else if (typeof llmResponse === 'object' && llmResponse !== null) {
-      // Если объект (JSON для графика), возвращаем сообщение-заглушку
-      // Или можно вернуть JSON.stringify(llmResponse), если это имеет смысл для отладки
+    // --- ВАЖНАЯ ПРОВЕРКА ТИПА ---
+    if (typeof llmResponse === 'object' && llmResponse !== null) {
+      // Если это объект (JSON для графика), возвращаем заглушку в чат
       responseText = "[Получены данные для графика, не отображаются в чате]";
       console.log("API чата получило данные для графика:", llmResponse);
+    } else if (typeof llmResponse === 'string') {
+      // Если это строка, используем ее как текст для чата
+      responseText = llmResponse;
     } else {
       // Неожиданный тип ответа
       responseText = "Не удалось обработать ответ от LLM.";
       console.error("Неожиданный тип ответа от getChartDataFromLLM:", llmResponse);
     }
+    // --- КОНЕЦ ПРОВЕРКИ ---
 
+    // Возвращаем только текстовый ответ для чата
     return NextResponse.json({ text: responseText });
 
   } catch (error) {
