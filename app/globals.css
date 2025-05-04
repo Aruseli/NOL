@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --border: var(--color-slate-800);
 }
 
 @theme inline {
@@ -10,12 +11,14 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-border: var(--border);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --border: var(--color-slate-200);
   }
 }
 
@@ -23,4 +26,31 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+textarea {
+  appearance: none;
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    border: 0.1em solid var(--border);
+    padding-inline: --spacing(5);
+    padding-block: --spacing(2);
+    width: 100%;
+    transition: background-color 0.4s ease;
+    &:hover {
+      @media (hover: hover) {
+        border-color: var(--button-primary-hover);
+      }
+    }
+    &:focus-visible {
+      border-color: var(--button-primary-hover);
+      outline: none;
+      background-color: transparent;
+    }
+    &::-internal-autofill-selected {
+      border-color: var(--button-primary-hover);
+      appearance: none;
+      background-image: none !important;
+      background-color: transparent !important;
+    }
 }
