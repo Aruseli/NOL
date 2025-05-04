@@ -31,7 +31,8 @@ mcpServer.tool(
   { prompt: z.string() },
   async ({ prompt }, extra) => {
     // Просим LLM вернуть только JSON-массив для ECharts
-    const userPrompt = `${prompt}\nОтветь только JSON-массивом для ECharts без пояснений.`;
+    // const userPrompt = `${prompt}\nОтветь только JSON-массивом для ECharts без пояснений.`; // Old prompt
+    const userPrompt = `${prompt}\nGenerate a valid ECharts JSON configuration object based on the request. Respond ONLY with the JSON object, without any explanations or markdown formatting.`; // New prompt
     const result = await llm.invoke([{ role: "user", content: userPrompt }]);
 
     // Гарантируем, что text - строка!

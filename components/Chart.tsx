@@ -30,12 +30,16 @@ export default function EChartsChart() {
 
       // Проверяем, есть ли поле data (успешный ответ от API)
       if (result.data && typeof result.data === 'object') {
-        // Успешно получили объект JSON от API
-        // Теперь нужно убедиться, что структура result.data подходит для ECharts
-        // Ваша предыдущая логика парсинга была внутри API, теперь данные приходят готовыми
-        // Возможно, вам нужно будет адаптировать структуру result.data к EChartsOption здесь
-        // Пример: предполагаем, что result.data уже имеет нужную структуру EChartsOption
-        setOption(result.data as EChartsOption);
+        // --- Add validation ---
+        if (typeof result.data === 'object' && result.data !== null && Array.isArray((result.data as any).series)) {
+          // Looks like a plausible ECharts option
+          setOption(result.data as EChartsOption);
+        } else {
+          // Data received, but not a valid ECharts structure
+          console.error("Invalid ECharts option structure received:", result.data);
+          throw new Error("Received data is not a valid ECharts configuration object. Ensure it has a 'series' array.");
+        }
+        // --- End validation ---
       } else {
         // Если data нет или это не объект, что-то пошло не так
         throw new Error(result.error || result.details || "Некорректный формат данных от API");
