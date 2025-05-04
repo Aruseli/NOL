@@ -32,7 +32,7 @@ export default function Chat() {
         ))}
       </div>
       
-      <form onSubmit={handleSubmit} className="flex flex-row gap-4 absolute bottom-4 w-full">
+      <form onSubmit={handleSubmit} className="flex flex-row gap-4 absolute bottom-0 w-full">
         <textarea
           value={input}
           onChange={e => setInput(e.target.value)}
