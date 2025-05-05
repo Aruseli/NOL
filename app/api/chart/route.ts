@@ -10,22 +10,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    // Вызываем нашу универсальную функцию
     const llmResponse = await getChartDataFromLLM(prompt);
 
-    // Проверяем тип ответа
-    if (typeof llmResponse === 'object' && llmResponse !== null) {
-      // Успех: получили JSON, возвращаем его как есть
-      return NextResponse.json({ data: llmResponse });
-    } else if (typeof llmResponse === 'string') {
-      // Ошибка: получили текст вместо JSON
-      console.error("API /api/chart получило текст вместо JSON:", llmResponse);
-      return NextResponse.json({ error: 'Failed to generate chart data', details: llmResponse }, { status: 500 });
-    } else {
-      // Неожиданный ответ
-      console.error("API /api/chart получило неожиданный ответ:", llmResponse);
-      return NextResponse.json({ error: 'Internal Server Error', details: 'Unexpected response format from LLM service' }, { status: 500 });
-    }
+    let response = typeof llmResponse === 'object' && llmResponse !== null ? llmResponse : "Не удалось обработать ответ от LLM.";
+    // Возвращаем данные клиенту
+    return NextResponse.json({ data: response });
 
   } catch (error) {
     console.error("Error in /api/chart:", error);

@@ -4,25 +4,31 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 type MCPToolContent = { type: "text"; text: string };
 type MCPToolResult = { content: MCPToolContent[] };
 
-// Изменяем тип возвращаемого значения на Promise<string | object>
 export async function getChartDataFromLLM(prompt: string): Promise<string | object> {
+  return await callMCPTool("getChartDataFromLLM", prompt);
+}
+
+export async function getChatResponseFromLLM(prompt: string): Promise<string | object> {
+  return await callMCPTool("getChatResponseFromLLM", prompt);
+}
+
+async function callMCPTool(toolName: string, prompt: string): Promise<string | object> {
   const transport = new StdioClientTransport({
     command: "node",
-    // Убедитесь, что путь верный, например:
-    args: ["dist/mcp-server.js"] // Или тот путь, который вы исправили
+    args: ["dist/mcp-server.js"]
   });
   const client = new Client({
     name: "nol-mcp-client",
     version: "1.0.0"
   });
 
-  let responseData: string | object = "Произошла ошибка при получении ответа."; // Значение по умолчанию
+  let responseData: string | object = "Произошла ошибка при получении ответа.";
 
   try {
     await client.connect(transport);
 
     const result = await client.callTool({
-      name: "getChartDataFromLLM", // Убедитесь, что имя инструмента верное
+      name: toolName,
       arguments: { prompt }
     }) as MCPToolResult;
 
@@ -38,14 +44,11 @@ export async function getChartDataFromLLM(prompt: string): Promise<string | obje
       const rawText = (result as any).content[0].text;
 
       try {
-        // Пытаемся распарсить как JSON
         responseData = JSON.parse(rawText);
-        // Если успешно, responseData теперь объект (для ECharts)
-        console.log("Получены данные JSON для графика.");
+        console.log("Получены данные JSON.");
       } catch (parseError) {
-        // Если не JSON, значит это обычный текст (для чата)
         responseData = rawText;
-        console.log("Получен обычный текст (не JSON).");
+        console.log("Получен текст.");
       }
 
     } else {
@@ -56,10 +59,8 @@ export async function getChartDataFromLLM(prompt: string): Promise<string | obje
       console.error("Ошибка при вызове MCP tool:", error);
       responseData = `Ошибка при взаимодействии с LLM: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
-      // Просто вызываем close(), он должен обработать все случаи
       await client.close();
   }
 
-  // Возвращаем либо объект JSON, либо строку текста/ошибки
   return responseData;
 }

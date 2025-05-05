@@ -6,14 +6,15 @@ import { ChatOpenAI } from "@langchain/openai";
 // Конфигурируем LangChain с OpenRouter
 const llm = new ChatOpenAI({
     modelName: "openrouter/auto",
-    temperature: 0.7,
+    temperature: 0.8,
+    streaming: true,
     openAIApiKey: process.env.OPENROUTER_API_KEY,
     configuration: {
         baseURL: process.env.OPENROUTER_BASE_URL, // например, https://openrouter.ai/api/v1
     },
     modelKwargs: {
         headers: {
-            "HTTP-Referer": process.env.YOUR_SITE_URL,
+            "HTTP-Referer": process.env.SITE_URL,
             "X-Title": "NOL App",
         },
     },
@@ -22,13 +23,10 @@ const mcpServer = new McpServer({
     name: "NOL MCP Server",
     version: "1.0.0",
 });
-// MCP tool, который возвращает JSON-массив для ECharts как строку
+// MCP tool для ECharts
 mcpServer.tool("getChartDataFromLLM", { prompt: z.string() }, async ({ prompt }, extra) => {
-    // Просим LLM вернуть только JSON-массив для ECharts
-    // const userPrompt = `${prompt}\nОтветь только JSON-массивом для ECharts без пояснений.`; // Old prompt
     const userPrompt = `${prompt}\nGenerate a valid ECharts JSON configuration object based on the request. Respond ONLY with the JSON object, without any explanations or markdown formatting.`; // New prompt
     const result = await llm.invoke([{ role: "user", content: userPrompt }]);
-    // Гарантируем, что text - строка!
     let text;
     if (typeof result.content === "string") {
         text = result.content;
@@ -40,6 +38,46 @@ mcpServer.tool("getChartDataFromLLM", { prompt: z.string() }, async ({ prompt },
         text = JSON.stringify(result.content);
     }
     // Возвращаем как MCP требует: массив объектов с type: "text" и text: string
+    return {
+        content: [{ type: "text", text }]
+    };
+});
+// MCP resource для конфигурации приложения
+// mcpServer.resource(
+//   "config",
+//   "config://app",
+//   async (uri) => ({
+//     contents: [{
+//       uri: uri.href,
+//       text: "App configuration here"
+//     }]
+//   })
+// );
+// MCP динамический resource для пользовательских данных
+// mcpServer.resource(
+//   "user-profile",
+//   new ResourceTemplate("users://{userId}/profile", { list: undefined }),
+//   async (uri, { userId }) => ({
+//     contents: [{
+//       uri: uri.href,
+//       text: `Profile data for user ${userId}`
+//     }]
+//   })
+// );
+// MCP tool для текста
+mcpServer.tool("getChatResponseFromLLM", { prompt: z.string() }, async ({ prompt }, extra) => {
+    const userPrompt = `${prompt}\nОтветь текстом для чата без JSON или других форматов.`;
+    const result = await llm.invoke([{ role: "user", content: userPrompt }]);
+    let text;
+    if (typeof result.content === "string") {
+        text = result.content;
+    }
+    else if (Array.isArray(result.content)) {
+        text = result.content.map((c) => (typeof c.text === "string" ? c.text : "")).join("\n");
+    }
+    else {
+        text = JSON.stringify(result.content);
+    }
     return {
         content: [{ type: "text", text }]
     };
