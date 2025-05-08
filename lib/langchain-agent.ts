@@ -5,11 +5,15 @@ type MCPToolContent = { type: "text"; text: string };
 type MCPToolResult = { content: MCPToolContent[] };
 
 export async function getChartDataFromLLM(prompt: string): Promise<string | object> {
-  return await callMCPTool("getChartDataFromLLM", prompt);
+  const result = await callMCPTool("getChartDataFromLLM", prompt);
+  console.log("Получены данные от LLM_getChartDataFromLLM:", result); // Debugging log to check the response from the MCP tool
+  return result;
 }
 
 export async function getChatResponseFromLLM(prompt: string): Promise<string | object> {
-  return await callMCPTool("getChatResponseFromLLM", prompt);
+  const result = await callMCPTool("getChatResponseFromLLM", prompt);
+  console.log("Получены данные от LLM_getChatResponseFromLLM:", result); // Debugging log to check the response from the MCP tool
+  return result;
 }
 
 async function callMCPTool(toolName: string, prompt: string): Promise<string | object> {

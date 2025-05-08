@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-// Убедитесь, что путь импорта верный
-import { getChatResponseFromLLM } from '@/lib/langchain-agent';
+import { getChartDataFromLLM, getChatResponseFromLLM } from '@/lib/langchain-agent';
 
 export async function POST(request: Request) {
   try {
@@ -11,11 +10,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    const llmResponse = await getChatResponseFromLLM(prompt)
+    // Получаем ответ для чата
+    const chatResponse = await getChatResponseFromLLM(prompt);
 
-    let responseText: string = typeof llmResponse === 'string' ? llmResponse : "Не удалось обработать ответ от LLM.";
+    // Получаем данные для чарта
+    const chartData = await getChartDataFromLLM(prompt);
 
-    return NextResponse.json({ text: responseText });
+    // Приводим chatResponse к строке (если нужно)
+    const responseText = typeof chatResponse === 'string' ? chatResponse : "Не удалось обработать ответ от LLM.";
+
+    // Возвращаем оба результата вместе
+    return NextResponse.json({
+      text: responseText,
+      chart: chartData
+    });
 
   } catch (error) {
     console.error("Error in /api/chat:", error);

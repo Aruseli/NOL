@@ -2,24 +2,103 @@
 import { useState } from "react";
 import { ChatBubble } from "@/components/ChatBubble";
 import { SparkleIcon } from "@/components/SparkleIcon";
+import { UploadIcon } from "@/components/UploadIcon";
+import { useChartStore } from '@/store/chartStore';
 
-export default function Chat() {
+export default function Chat({ onFileUpload }: { onFileUpload?: (data: object) => void }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Array<{text: string, isUser: boolean}>>([]);
+  const setChartOption = useChartStore((state) => state.setChartOption);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     setMessages(prev => [...prev, {text: input, isUser: true}]);
+    try {
+      // Для JSON данных
+      if (input.startsWith('{') || input.startsWith('[')) {
+        const jsonData = JSON.parse(input);
+        const chartResponse = await fetch('/api/chart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json' // Добавляем заголовок
+          },
+          body: JSON.stringify({ data: jsonData })
+        });
+        if (!chartResponse.ok) throw new Error('Chart API error');
+      
+        const result = await chartResponse.json();
+        onFileUpload?.(result.data);
+        setChartOption(result.data);
+      } 
+      // Для текстовых запросов
+      else {
+        const chatResponse = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json' // Добавляем заголовок
+          },
+          body: JSON.stringify({ prompt: input })
+        });
+        
+        if (!chatResponse.ok) {
+          throw new Error('Chat API error');
+        }
+        
+        const { text, chart } = await chatResponse.json(); // Предполагаем, что /api/chat может вернуть и 'chart'
+        setMessages(prev => [...prev, {text, isUser: false}]);
+        if (chart) { // Если API вернуло данные для графика
+          setChartOption(chart);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка обработки запроса:', error);
+      alert('Произошла ошибка при обработке данных');
+    }
     
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({ prompt: input })
-    });
-    
-    const { text } = await response.json();
-    setMessages(prev => [...prev, {text, isUser: false}]);
     setInput("");
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const jsonContent = JSON.parse(event.target?.result as string);
+          setInput(JSON.stringify(jsonContent, null, 2));
+          
+          // Добавляем сообщение о загрузке файла
+          setMessages(prev => [...prev, {
+            text: `Файл ${file.name} успешно загружен`,
+            isUser: true
+          }]);
+          const chartResponse = await fetch('/api/chart', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ data: jsonContent }) // Отправляем jsonContent
+          });
+          if (!chartResponse.ok) throw new Error('Chart API error from file upload');
+        
+          const result = await chartResponse.json();
+          setChartOption(result.data);
+        } catch (error) {
+          console.error('Error parsing JSON:', error);
+          setMessages(prev => [...prev, {
+            text: 'Ошибка: неверный формат JSON файла',
+            isUser: false
+          }]);
+        }
+      };
+      reader.onerror = () => {
+        setMessages(prev => [...prev, {
+          text: 'Ошибка при чтении файла',
+          isUser: false
+        }]);
+      };
+      reader.readAsText(file);
+    }
   };
 
   return (
@@ -31,15 +110,30 @@ export default function Chat() {
           </div>
         ))}
       </div>
-      
-      <form onSubmit={handleSubmit} className="flex flex-row gap-4 absolute bottom-0 w-full">
-        <textarea
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Enter your message..."
-        />
-        <button type="submit"><SparkleIcon /></button>
-      </form>
+      <div className="absolute bottom-0 w-full">
+        <form onSubmit={handleSubmit} className="flex flex-row gap-4 relative">
+          <input
+            type="file"
+            accept=".json,application/json"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="file-upload"
+          />
+          <label
+            htmlFor="file-upload"
+            className="px-2 cursor-pointer border-zinc-400 border rounded-full hover:bg-gray-200 absolute right-12 top-2"
+          >
+            <UploadIcon className="w-2" />
+          </label>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Enter your message..."
+            className="flex-1"
+          />
+          <button type="submit"><SparkleIcon /></button>
+        </form>
+      </div>
     </div>
   );
 }

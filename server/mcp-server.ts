@@ -31,7 +31,7 @@ mcpServer.tool(
   "getChartDataFromLLM",
   { prompt: z.string() },
   async ({ prompt }, extra) => {
-    const userPrompt = `${prompt}\nGenerate a valid ECharts JSON configuration object based on the request. Respond ONLY with the JSON object, without any explanations or markdown formatting.`; // New prompt
+    const userPrompt = `${prompt}\nGenerate a valid ECharts JSON configuration object with a series array. Respond ONLY with JSON, no extra text or markdown.`; // New prompt
     const result = await llm.invoke([{ role: "user", content: userPrompt }]);
 
     let text: string;
@@ -96,7 +96,6 @@ mcpServer.tool(
     };
   }
 );
-
 
 // Запуск MCP сервера через stdio
 await mcpServer.connect(new StdioServerTransport());
