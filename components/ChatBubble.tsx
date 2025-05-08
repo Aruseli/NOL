@@ -27,7 +27,7 @@ export const ChatBubble = ({ message, role, className, ...props }: ChatBubblePro
       });
   };
   return (
-    <div className={`shadow-md rounded-lg p-2 flex-col flex relative min-w-[12em] ${role === 'user' ? 'bg-gradient-to-tr from-slate-400 to-slate-800' : 'bg-gradient-to-tl from-slate-400 to-slate-800'} ${className}`} {...props}>
+    <div className={`shadow-md rounded-lg p-2 flex-col flex relative min-w-[12em] max-w-[95%] ${role === 'user' ? 'bg-gradient-to-tr from-slate-400 to-slate-800' : 'bg-gradient-to-tl from-slate-400 to-slate-800'} ${className}`} {...props}>
       <div className="flex items-center mb-2">
         {role === 'assistant' ? <div className="size-4 bg-transparent rounded-md"><SparkleIcon /></div> : <UserIcon />}
         <div className='flex w-full justify-end'>
