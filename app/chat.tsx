@@ -4,15 +4,18 @@ import { ChatBubble } from "@/components/ChatBubble";
 import { SparkleIcon } from "@/components/SparkleIcon";
 import { UploadIcon } from "@/components/UploadIcon";
 import { useChartStore } from '@/store/chartStore';
+import { useLoadingStore } from "@/store/loadingStore";
 
 export default function Chat({ onFileUpload }: { onFileUpload?: (data: object) => void }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Array<{text: string, isUser: boolean}>>([]);
   const setChartOption = useChartStore((state) => state.setChartOption);
+  const { showLoader, hideLoader } = useLoadingStore.getState();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessages(prev => [...prev, {text: input, isUser: true}]);
+    showLoader();
     try {
       // Для JSON данных
       if (input.startsWith('{') || input.startsWith('[')) {
@@ -53,6 +56,8 @@ export default function Chat({ onFileUpload }: { onFileUpload?: (data: object) =
     } catch (error) {
       console.error('Ошибка обработки запроса:', error);
       alert('Произошла ошибка при обработке данных');
+    } finally {
+      hideLoader();
     }
     
     setInput("");
@@ -102,15 +107,17 @@ export default function Chat({ onFileUpload }: { onFileUpload?: (data: object) =
   };
 
   return (
-    <div className="w-full h-full items-center grid grid-rows-[1fr_4.5em] relative">
-      <div className="flex flex-col gap-2 mb-4">
-        {messages.map((msg, i) => (
-          <div key={i} className={`whitespace-pre-wrap flex text-gray-50 ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
-            <ChatBubble role={msg.isUser ? 'user' : 'assistant'} message={msg.text} />
-          </div>
-        ))}
+    <div className="w-full h-full items-center grid grid-rows-[1fr_4.5em] relative pr-2">
+      <div className="h-full overflow-hidden">
+        <div className="flex flex-col gap-2 mb-4 overflow-y-scroll">
+          {messages.map((msg, i) => (
+            <div key={i} className={`whitespace-pre-wrap flex text-gray-50 ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+              <ChatBubble role={msg.isUser ? 'user' : 'assistant'} message={msg.text} />
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="absolute bottom-0 w-full">
+      <div className="absolute bottom-0 w-full pr-4">
         <form onSubmit={handleSubmit} className="flex flex-row gap-4 relative">
           <input
             type="file"
@@ -121,15 +128,15 @@ export default function Chat({ onFileUpload }: { onFileUpload?: (data: object) =
           />
           <label
             htmlFor="file-upload"
-            className="px-2 cursor-pointer border-zinc-400 border rounded-full hover:bg-gray-200 absolute right-12 top-2"
+            className="cursor-pointer border-foreground border-2 bg-background rounded-full hover:bg-gray-200 absolute right-[1.7rem] -top-[0.7rem] p-1"
           >
-            <UploadIcon className="w-2" />
+            <UploadIcon />
           </label>
-          <input
+          <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             placeholder="Enter your message..."
-            className="flex-1"
+            className="flex-1 wrap-anywhere"
           />
           <button type="submit"><SparkleIcon /></button>
         </form>

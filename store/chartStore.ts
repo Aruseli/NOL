@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { EChartsOption } from 'echarts'; // Убедитесь, что тип EChartsOption импортирован правильно
+import type { EChartsOption } from 'echarts-for-react' // Убедитесь, что тип EChartsOption импортирован правильно
 
 interface ChartState {
   chartOption: EChartsOption | null; // Состояние для опций графика, может быть null изначально
