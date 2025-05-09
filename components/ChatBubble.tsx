@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { CopyIcon } from '@/components/CopyIcon';
+import { CopyIcon } from '@/components/Icons/CopyIcon';
 import { IconButton } from '@/components/IconButton';
-import { SparkleIcon } from './SparkleIcon';
-import { UserIcon } from './UserIcon';
+import { SparkleIcon } from './Icons/SparkleIcon';
+import { UserIcon } from './Icons/UserIcon';
 
 interface ChatBubbleProps {
   message: string;

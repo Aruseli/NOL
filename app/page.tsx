@@ -1,6 +1,6 @@
 'use client';
-import EChartsChart from "@/components/Chart";
-import Chat from "./chat";
+import { EChartsChart } from "@/components/Chart";
+import { Chat } from "@/components/Chat";
 import {
   ResizableHandle,
   ResizablePanel,

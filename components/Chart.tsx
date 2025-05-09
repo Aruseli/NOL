@@ -4,7 +4,7 @@ import { useChartStore } from "@/store/chartStore";
 import ReactECharts from "echarts-for-react";
 import type { EChartsOption } from 'echarts-for-react'
 
-export default function EChartsChart() {
+export const EChartsChart = () => {
   const chartOption = useChartStore((state) => state.chartOption);
   const option: EChartsOption = chartOption;
   console.log('option', option);
