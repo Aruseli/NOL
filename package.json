@@ -11,7 +11,8 @@
     "server-mcp": "node --no-warnings --loader ts-node/esm server/mcp-server.ts  npx tsc -p tsconfig.server.json"
   },
   "dependencies": {
-    "@langchain/core": "^0.3.51",
+    "@langchain/core": "^0.3.55",
+    "@langchain/groq": "^0.2.2",
     "@langchain/mcp-adapters": "^0.4.2",
     "@langchain/openai": "^0.5.10",
     "@modelcontextprotocol/sdk": "^1.11.0",
@@ -24,8 +25,10 @@
     "eventsource": "^3.0.6",
     "express": "^5.1.0",
     "extended-eventsource": "^2.1.0",
+    "groq-sdk": "^0.21.0",
     "langchain": "^0.3.24",
     "lucide-react": "^0.508.0",
+    "markdown-to-jsx": "^7.7.6",
     "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

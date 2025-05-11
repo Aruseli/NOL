@@ -5,6 +5,7 @@ import { CopyIcon } from '@/components/Icons/CopyIcon';
 import { IconButton } from '@/components/IconButton';
 import { SparkleIcon } from './Icons/SparkleIcon';
 import { UserIcon } from './Icons/UserIcon';
+import Markdown from 'markdown-to-jsx'
 
 interface ChatBubbleProps {
   message: string;
@@ -39,7 +40,7 @@ export const ChatBubble = ({ message, role, className, ...props }: ChatBubblePro
           <span className="text-violet-950 font-bold">Copied!</span>
         </div>
       )}
-      {message}
+      <Markdown>{message}</Markdown>
     </div>
   )
 }
