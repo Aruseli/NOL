@@ -18,37 +18,26 @@ export const Chat = ({ onFileUpload }: { onFileUpload?: (data: object) => void }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     let promptToSend: string;
-    let messageForChat: string;
     const userTextInput = input.trim();
 
     if (fileInfo) {
-      // Файл загружен
       if (userTextInput) {
-        // Файл загружен И есть текст в textarea
-        promptToSend = `Данные из файла "${fileInfo.name}":\n${fileInfo.content}\n\nИнструкция от пользователя к этим данным:\n${userTextInput}`;
-        messageForChat = `Файл: ${fileInfo.name}\nИнструкция: ${userTextInput}`;
+        promptToSend = `Данные из файла "${fileInfo.name}":\n${fileInfo.content}\n\nИнструкция от пользователя:\n${userTextInput}`;
       } else {
-        // Файл загружен, но textarea пусто. Отправляем только содержимое файла.
-        // (Можно добавить более описательный промпт по умолчанию, если это необходимо)
-        promptToSend = fileInfo.content; 
-        messageForChat = `Файл: ${fileInfo.name}`;
+        promptToSend = fileInfo.content;
       }
-    } else if (userTextInput) {
-      // Файл не загружен, только текст в textarea
-      promptToSend = userTextInput;
-      messageForChat = userTextInput;
     } else {
-      // Нечего отправлять (ни файла, ни текста)
-      return; 
+      promptToSend = userTextInput;
     }
 
-    setMessages(prev => [...prev, { text: messageForChat, isUser: true }]);
+    if (!promptToSend) return; // Не отправлять, если нечего
+
+    setMessages(prev => [...prev, { text: promptToSend, isUser: true }]);
     showLoader();
 
     try {
-      // Всегда используем /api/chat, который вызывает оба LLM инструмента
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -56,42 +45,39 @@ export const Chat = ({ onFileUpload }: { onFileUpload?: (data: object) => void }
         },
         body: JSON.stringify({ prompt: promptToSend })
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ details: 'Unknown API error' }));
         throw new Error(`API error: ${response.status} ${response.statusText}. ${errorData.details || ''}`);
       }
-      
-      const { text, chart } = await response.json();
-      setMessages(prev => [...prev, {text, isUser: false}]);
-      if (chart) {
-        // Проверяем, является ли 'chart' объектом и не null (т.е. валидной конфигурацией)
-        if (typeof chart === 'object' && chart !== null) {
-          setChartOption(chart);
-          onFileUpload?.(chart); // Обновляем график, если есть валидные данные
-        } else {
-          // Если 'chart' - это строка ошибки или что-то иное, обрабатываем как ошибку
-          console.error('Ошибка при получении данных для диаграммы:', chart);
-          setMessages(prev => [...prev, { text: `Не удалось построить диаграмму: ${typeof chart === 'string' ? chart : 'некорректные данные'}`, isUser: false }]);
-          setChartOption(null); // Сбрасываем опции диаграммы или устанавливаем состояние ошибки
-        }
+
+      const { text, jsonObjects } = await response.json();
+
+      console.log('Полученные данные:', { text, jsonObjects }); // Выводим полученные данные в консоль для отладки
+
+      setMessages(prev => [...prev, { text, isUser: false }]);
+
+      if (jsonObjects && typeof jsonObjects === 'object' && jsonObjects !== null) {
+        setChartOption(jsonObjects);
+        console.log('Диаграмма успешно построена:', jsonObjects);
+        onFileUpload?.(jsonObjects);
       } else {
-        setChartOption(null); // Если chart пустой, также сбрасываем
+        setChartOption(null);
+        if (jsonObjects) { // Если chart есть, но не объект, это может быть сообщение об ошибке
+          console.error('Ошибка при получении данных для диаграммы:', jsonObjects);
+          setMessages(prev => [...prev, { text: `Не удалось построить диаграмму: ${typeof jsonObjects === 'string' ? jsonObjects : 'некорректные данные'}`, isUser: false }]);
+        }
       }
     } catch (error) {
-      console.error('Ошибка обработки запроса:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка при обработке данных';
+      const errorMessage = error instanceof Error ? error.message : String(error);
       setMessages(prev => [...prev, { text: `Ошибка: ${errorMessage}`, isUser: false }]);
+      setChartOption(null);
     } finally {
       hideLoader();
     }
-    
-    setInput(""); // Очищаем текстовое поле
-    if (fileInfo) {
-      setFileInfo(null); // Очищаем информацию о файле после отправки
-    }
-    
-    // setInput("");
+
+    setInput("");
+    if (fileInfo) setFileInfo(null);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getChartDataFromLLM, getChatResponseFromLLM } from '@/lib/langchain-agent';
+// Удаляем getChartDataFromLLM, getChatResponseFromLLM, если они больше не нужны напрямую здесь
+// import { getChartDataFromLLM, getChatResponseFromLLM } from '@/lib/langchain-agent';
+import { handleUserRequest } from '@/lib/chain';
+// import { handleUserRequest } from '@/lib/langchain-client';
 
 export async function POST(request: Request) {
   try {
@@ -10,19 +13,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    // Получаем ответ для чата
-    const chatResponse = await getChatResponseFromLLM(prompt);
+    // Используем handleUserRequest для получения ответа и данных для графика
+    const { text, jsonObjects } = await handleUserRequest(prompt);
 
-    // Получаем данные для чарта
-    const chartData = await getChartDataFromLLM(prompt);
-
-    // Приводим chatResponse к строке (если нужно)
-    const responseText = typeof chatResponse === 'string' ? chatResponse : "Не удалось обработать ответ от LLM.";
-
-    // Возвращаем оба результата вместе
+    // Возвращаем результат
     return NextResponse.json({
-      text: responseText,
-      chart: chartData
+      text: text, // text уже должен быть строкой от handleUserRequest
+      chart: jsonObjects // chart может быть объектом или null/undefined
     });
 
   } catch (error) {

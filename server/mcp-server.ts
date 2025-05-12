@@ -26,29 +26,62 @@ const mcpServer = new McpServer({
   version: "1.0.0",
 });
 
-// MCP tool для ECharts
 mcpServer.tool(
   "getChartDataFromLLM",
   { prompt: z.string() },
-  async ({ prompt }, extra) => {
-    const userPrompt = `${prompt}\nGenerate a valid ECharts JSON configuration object with a series array. Respond ONLY with JSON, no extra text or markdown.`; // New prompt
+  async ({ prompt }) => {
+    const userPrompt = `${prompt}\nGenerate a valid ECharts JSON configuration object with a series array. Respond ONLY with JSON, no extra text or markdown.`;
     const result = await llm.invoke([{ role: "user", content: userPrompt }]);
-
-    let text: string;
-    if (typeof result.content === "string") {
-      text = result.content;
-    } else if (Array.isArray(result.content)) {
-      text = result.content.map((c: any) => (typeof c.text === "string" ? c.text : "")).join("\n");
-    } else {
-      text = JSON.stringify(result.content);
-    }
-
-    // Возвращаем как MCP требует: массив объектов с type: "text" и text: string
-    return {
-      content: [{ type: "text", text }]
-    };
+    const text = typeof result.content === "string" ? result.content : JSON.stringify(result.content);
+    return { content: [{ type: "text", text }] };
   }
 );
+
+mcpServer.tool(
+  "getChatResponseFromLLM",
+  { prompt: z.string() },
+  async ({ prompt }) => {
+    const userPrompt = `${prompt}\nОтветь текстом для чата без JSON или других форматов.`;
+    const result = await llm.invoke([{ role: "user", content: userPrompt }]);
+    const text = typeof result.content === "string" ? result.content : JSON.stringify(result.content);
+    return { content: [{ type: "text", text }] };
+  }
+);
+
+// mcpServer.tool(
+//   "classifyRequest",
+//   { prompt: z.string() },
+//   async ({ prompt }) => {
+//     const classificationPrompt = `${prompt}\nОтветь одним словом: "chart" если нужен график, или "chat" если нет.`;
+//     const result = await llm.invoke([{ role: "user", content: classificationPrompt }]);
+//     const text = typeof result.content === "string" ? result.content.trim().toLowerCase() : "chat";
+//     return { content: [{ type: "text", text: text.includes("chart") ? "chart" : "chat" }] };
+//   }
+// );
+
+// MCP tool для ECharts
+// mcpServer.tool(
+//   "getChartDataFromLLM",
+//   { prompt: z.string() },
+//   async ({ prompt }, extra) => {
+//     const userPrompt = `${prompt}\nGenerate a valid ECharts JSON configuration object with a series array. Respond ONLY with JSON, no extra text or markdown.`; // New prompt
+//     const result = await llm.invoke([{ role: "user", content: userPrompt }]);
+
+//     let text: string;
+//     if (typeof result.content === "string") {
+//       text = result.content;
+//     } else if (Array.isArray(result.content)) {
+//       text = result.content.map((c: any) => (typeof c.text === "string" ? c.text : "")).join("\n");
+//     } else {
+//       text = JSON.stringify(result.content);
+//     }
+
+//     // Возвращаем как MCP требует: массив объектов с type: "text" и text: string
+//     return {
+//       content: [{ type: "text", text }]
+//     };
+//   }
+// );
 
 // MCP resource для конфигурации приложения
 // mcpServer.resource(
@@ -75,25 +108,37 @@ mcpServer.tool(
 // );
 
 // MCP tool для текста
+// mcpServer.tool(
+//   "getChatResponseFromLLM",
+//   { prompt: z.string() },
+//   async ({ prompt }, extra) => {
+//     const userPrompt = `${prompt}\nОтветь текстом для чата без JSON или других форматов.`;
+//     const result = await llm.invoke([{ role: "user", content: userPrompt }]);
+
+//     let text: string;
+//     if (typeof result.content === "string") {
+//       text = result.content;
+//     } else if (Array.isArray(result.content)) {
+//       text = result.content.map((c: any) => (typeof c.text === "string" ? c.text : "")).join("\n");
+//     } else {
+//       text = JSON.stringify(result.content);
+//     }
+
+//     return {
+//       content: [{ type: "text", text }]
+//     };
+//   }
+// );
+
 mcpServer.tool(
-  "getChatResponseFromLLM",
+  "classifyRequest",
   { prompt: z.string() },
-  async ({ prompt }, extra) => {
-    const userPrompt = `${prompt}\nОтветь текстом для чата без JSON или других форматов.`;
-    const result = await llm.invoke([{ role: "user", content: userPrompt }]);
-
-    let text: string;
-    if (typeof result.content === "string") {
-      text = result.content;
-    } else if (Array.isArray(result.content)) {
-      text = result.content.map((c: any) => (typeof c.text === "string" ? c.text : "")).join("\n");
-    } else {
-      text = JSON.stringify(result.content);
-    }
-
-    return {
-      content: [{ type: "text", text }]
-    };
+  async ({ prompt }) => {
+    const classificationPrompt = `${prompt}\nОтветь одним словом: "chart" если нужен график, или "chat" если нет.`;
+    const result = await llm.invoke([{ role: "user", content: classificationPrompt }]);
+    let text = typeof result.content === "string" ? result.content.trim().toLowerCase() : "chat";
+    if (text.includes("chart")) return { content: [{ type: "text", text: "chart" }] };
+    return { content: [{ type: "text", text: "chat" }] };
   }
 );
 
